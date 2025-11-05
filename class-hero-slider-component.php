@@ -1646,8 +1646,8 @@ private function render_editor_scripts() {
         
         // OPEN FULLSCREEN EDITOR
         $(document).on('click', '.hsc-open-fullscreen-editor', function() {
-            const $form = $(this).closest('.hsc-editor-form');
-            const dataString = $form.find('.hsc-slider-data').val();
+            const $dataInput = $(this).parent().find('.hsc-slider-data');
+            const dataString = $dataInput.val() || '';
             
             if (dataString) {
                 try {
@@ -2626,12 +2626,12 @@ private function render_editor_scripts() {
         
         // SAVE DATA
         window.hscSaveFullscreenData = function() {
-            const $form = $('.hsc-editor-form');
-            $form.find('.hsc-slider-data').val(JSON.stringify(hscSliderData)).trigger('change');
+            const $dataInput = $('.hsc-slider-data');
+            $dataInput.val(JSON.stringify(hscSliderData)).trigger('change');
             $('#hsc-fullscreen-modal').fadeOut(300);
-            
+
             const slideCount = hscSliderData.slides.length;
-            $form.find('.current-settings').html(`<small style="color: #10B981; font-weight: 600;">✓ ${slideCount} slayt tanımlandı</small>`);
+            $dataInput.closest('.kreatus-form-group').find('.current-settings').html(`<small style="color: #10B981; font-weight: 600;">✓ ${slideCount} slayt tanımlandı</small>`);
         };
         
         // UTILITIES
