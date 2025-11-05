@@ -282,6 +282,12 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
             $styles .= 'text-align: ' . esc_attr($layer['text_align'] ?? 'left') . ' !important;';
             $styles .= 'line-height: ' . esc_attr($layer['line_height'] ?? '1.4') . ' !important;';
             $styles .= 'letter-spacing: ' . esc_attr($layer['letter_spacing'] ?? '0') . 'px !important;';
+
+            // Text glow/shadow
+            if (!empty($layer['text_glow']) && !empty($layer['text_glow_color'])) {
+                $glow_blur = $layer['text_glow_blur'] ?? 20;
+                $styles .= 'text-shadow: 0 0 ' . esc_attr($glow_blur) . 'px ' . esc_attr($layer['text_glow_color']) . ' !important;';
+            }
         }
         
         if ($layer['type'] === 'button') {
@@ -1781,6 +1787,82 @@ private function render_editor_scripts() {
                 $list.append($item);
             });
         }
+
+        function hscGetLayerTitle(layer) {
+            if (layer.type === 'text') {
+                const text = layer.content ? layer.content.replace(/<[^>]*>/g, '').substring(0, 20) : 'Metin';
+                return text + (layer.content && layer.content.length > 20 ? '...' : '');
+            } else if (layer.type === 'image') {
+                return 'Görsel';
+            } else if (layer.type === 'button') {
+                return layer.content || 'Buton';
+            }
+            return 'Katman';
+        }
+
+        // SELECT LAYER
+        $(document).on('click', '#hsc-layers-list .hsc-item', function(e) {
+            if ($(e.target).closest('.hsc-item-action').length) return;
+            const index = $(this).data('index');
+            hscSelectLayer(index);
+        });
+
+        function hscSelectLayer(index, skipPreviewRender = false) {
+            hscCurrentLayerIndex = index;
+
+            $('#hsc-layers-list .hsc-item').removeClass('active');
+            $(`#hsc-layers-list .hsc-item[data-index="${index}"]`).addClass('active');
+
+            const slide = hscSliderData.slides[hscCurrentSlideIndex];
+            const layer = slide.layers[index];
+
+            hscLoadLayerSettings(layer);
+
+            // Only render preview if not skipped (e.g., during dragging)
+            if (!skipPreviewRender) {
+                hscRenderPreview();
+            }
+
+            $('#hsc-layer-settings').show();
+        }
+
+        // LOAD LAYER SETTINGS
+        function hscLoadLayerSettings(layer) {
+            let html = '';
+
+            // Pozisyon ve Boyut
+            html += `
+                <div class="kreatus-form-group">
+                    <label>X (px)</label>
+                    <input type="number" id="hsc-layer-pos-x" class="kreatus-input" value="${layer.pos_x || 0}">
+                </div>
+                <div class="kreatus-form-group">
+                    <label>Y (px)</label>
+                    <input type="number" id="hsc-layer-pos-y" class="kreatus-input" value="${layer.pos_y || 0}">
+                </div>
+                <div class="kreatus-form-group">
+                    <label>Genişlik</label>
+                    <input type="text" id="hsc-layer-width" class="kreatus-input" value="${layer.width || 'auto'}" placeholder="auto veya px">
+                </div>
+                <div class="kreatus-form-group">
+                    <label>Yükseklik</label>
+                    <input type="text" id="hsc-layer-height" class="kreatus-input" value="${layer.height || 'auto'}" placeholder="auto veya px">
+                </div>
+                <div class="kreatus-form-group">
+                    <label>Z-Index</label>
+                    <input type="number" id="hsc-layer-z-index" class="kreatus-input" value="${layer.z_index || 10}">
+                </div>
+            `;
+
+            // İçerik ayarları
+            if (layer.type === 'text') {
+                html += `
+                    <div class="kreatus-form-group hsc-grid-full">
+                        <label>İçerik (HTML)</label>
+                        <textarea id="hsc-layer-content" class="kreatus-textarea" rows="3">${hscEscape(layer.content || '')}</textarea>
+                    </div>
+                `;
+            }
         
         // SELECT SLIDE
         $(document).on('click', '#hsc-slides-list .hsc-item', function(e) {
@@ -1944,13 +2026,13 @@ private function render_editor_scripts() {
                 newLayer.link_url = '#';
                 newLayer.link_new_tab = false;
             }
-            
+
             slide.layers.push(newLayer);
             hscRenderLayersList();
             hscSelectLayer(slide.layers.length - 1);
             $('.hsc-tab[data-tab="layers"]').click();
         };
-        
+
         // RENDER LAYERS LIST
         function hscRenderLayersList() {
             const $list = $('#hsc-layers-list').empty();
@@ -1992,211 +2074,7 @@ private function render_editor_scripts() {
                 $list.append($item);
             });
         }
-        
-        function hscGetLayerTitle(layer) {
-            if (layer.type === 'text') {
-                const text = layer.content ? layer.content.replace(/<[^>]*>/g, '').substring(0, 20) : 'Metin';
-                return text + (layer.content && layer.content.length > 20 ? '...' : '');
-            } else if (layer.type === 'image') {
-                return 'Görsel';
-            } else if (layer.type === 'button') {
-                return layer.content || 'Buton';
-            }
-            return 'Katman';
-        }
-        
-        // SELECT LAYER
-        $(document).on('click', '#hsc-layers-list .hsc-item', function(e) {
-            if ($(e.target).closest('.hsc-item-action').length) return;
-            const index = $(this).data('index');
-            hscSelectLayer(index);
-        });
-        
-        function hscSelectLayer(index) {
-            hscCurrentLayerIndex = index;
-            
-            $('#hsc-layers-list .hsc-item').removeClass('active');
-            $(`#hsc-layers-list .hsc-item[data-index="${index}"]`).addClass('active');
-            
-            const slide = hscSliderData.slides[hscCurrentSlideIndex];
-            const layer = slide.layers[index];
-            
-            hscLoadLayerSettings(layer);
-            hscRenderPreview();
-            $('#hsc-layer-settings').show();
-        }
-        
-        // LOAD LAYER SETTINGS
-        function hscLoadLayerSettings(layer) {
-            let html = '';
-            
-            // Pozisyon ve Boyut
-            html += `
-                <div class="kreatus-form-group">
-                    <label>X (px)</label>
-                    <input type="number" id="hsc-layer-pos-x" class="kreatus-input" value="${layer.pos_x || 0}">
-                </div>
-                <div class="kreatus-form-group">
-                    <label>Y (px)</label>
-                    <input type="number" id="hsc-layer-pos-y" class="kreatus-input" value="${layer.pos_y || 0}">
-                </div>
-                <div class="kreatus-form-group">
-                    <label>Genişlik</label>
-                    <input type="text" id="hsc-layer-width" class="kreatus-input" value="${layer.width || 'auto'}" placeholder="auto veya px">
-                </div>
-                <div class="kreatus-form-group">
-                    <label>Yükseklik</label>
-                    <input type="text" id="hsc-layer-height" class="kreatus-input" value="${layer.height || 'auto'}" placeholder="auto veya px">
-                </div>
-                <div class="kreatus-form-group">
-                    <label>Z-Index</label>
-                    <input type="number" id="hsc-layer-z-index" class="kreatus-input" value="${layer.z_index || 10}">
-                </div>
-            `;
-            
-            // İçerik ayarları
-            if (layer.type === 'text') {
-                html += `
-                    <div class="kreatus-form-group hsc-grid-full">
-                        <label>İçerik (HTML)</label>
-                        <textarea id="hsc-layer-content" class="kreatus-textarea" rows="3">${hscEscape(layer.content || '')}</textarea>
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Yazı Boyutu (px)</label>
-                        <input type="number" id="hsc-layer-font-size" class="kreatus-input" value="${layer.font_size || 16}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Yazı Rengi</label>
-                        <input type="color" id="hsc-layer-color" class="kreatus-color" value="${layer.color || '#ffffff'}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Yazı Kalınlığı</label>
-                        <select id="hsc-layer-font-weight" class="kreatus-select">
-                            <option value="300" ${layer.font_weight == 300 ? 'selected' : ''}>İnce</option>
-                            <option value="400" ${layer.font_weight == 400 ? 'selected' : ''}>Normal</option>
-                            <option value="600" ${layer.font_weight == 600 ? 'selected' : ''}>Yarı Kalın</option>
-                            <option value="700" ${layer.font_weight == 700 ? 'selected' : ''}>Kalın</option>
-                            <option value="900" ${layer.font_weight == 900 ? 'selected' : ''}>Çok Kalın</option>
-                        </select>
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Hizalama</label>
-                        <select id="hsc-layer-text-align" class="kreatus-select">
-                            <option value="left" ${layer.text_align === 'left' ? 'selected' : ''}>Sol</option>
-                            <option value="center" ${layer.text_align === 'center' ? 'selected' : ''}>Orta</option>
-                            <option value="right" ${layer.text_align === 'right' ? 'selected' : ''}>Sağ</option>
-                        </select>
-                    </div>
-                `;
-            } else if (layer.type === 'image') {
-                html += `
-                    <div class="kreatus-form-group hsc-grid-full">
-                        <label>Görsel URL</label>
-                        <input type="text" id="hsc-layer-image-url" class="kreatus-input" value="${hscEscape(layer.image_url || '')}">
-                        <button type="button" class="kreatus-btn kreatus-btn-secondary hsc-select-media" data-target="layer-image" style="width: 100%; margin-top: 5px;">Görsel Seç</button>
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Alt Metin</label>
-                        <input type="text" id="hsc-layer-alt-text" class="kreatus-input" value="${hscEscape(layer.alt_text || '')}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Border Radius (px)</label>
-                        <input type="number" id="hsc-layer-border-radius" class="kreatus-input" value="${layer.border_radius || 0}">
-                    </div>
-                    <div class="kreatus-form-group hsc-grid-full">
-                        <label>Link URL</label>
-                        <input type="url" id="hsc-layer-link-url" class="kreatus-input" value="${hscEscape(layer.link_url || '')}" placeholder="https://...">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label><input type="checkbox" id="hsc-layer-link-new-tab" class="kreatus-checkbox" ${layer.link_new_tab ? 'checked' : ''}> Yeni sekmede aç</label>
-                    </div>
-                `;
-            } else if (layer.type === 'button') {
-                html += `
-                    <div class="kreatus-form-group hsc-grid-full">
-                        <label>Buton Metni</label>
-                        <input type="text" id="hsc-layer-content" class="kreatus-input" value="${hscEscape(layer.content || '')}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Yazı Boyutu (px)</label>
-                        <input type="number" id="hsc-layer-font-size" class="kreatus-input" value="${layer.font_size || 16}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Yazı Rengi</label>
-                        <input type="color" id="hsc-layer-color" class="kreatus-color" value="${layer.color || '#ffffff'}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Arka Plan Rengi</label>
-                        <input type="color" id="hsc-layer-bg-color" class="kreatus-color" value="${layer.bg_color || '#8B5CF6'}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Padding</label>
-                        <input type="text" id="hsc-layer-padding" class="kreatus-input" value="${layer.padding || '12px 24px'}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label>Border Radius (px)</label>
-                        <input type="number" id="hsc-layer-border-radius" class="kreatus-input" value="${layer.border_radius || 6}">
-                    </div>
-                    <div class="kreatus-form-group hsc-grid-full">
-                        <label>Link URL</label>
-                        <input type="url" id="hsc-layer-link-url" class="kreatus-input" value="${hscEscape(layer.link_url || '#')}">
-                    </div>
-                    <div class="kreatus-form-group">
-                        <label><input type="checkbox" id="hsc-layer-link-new-tab" class="kreatus-checkbox" ${layer.link_new_tab ? 'checked' : ''}> Yeni sekmede aç</label>
-                    </div>
-                `;
-            }
-            
-            // Hover ve Motion Effects
-            html += `
-                <div class="kreatus-form-group">
-                    <label>Hover Efekti</label>
-                    <select id="hsc-layer-hover-effect" class="kreatus-select">
-                        <option value="none" ${layer.hover_effect === 'none' ? 'selected' : ''}>Yok</option>
-                        <option value="zoom" ${layer.hover_effect === 'zoom' ? 'selected' : ''}>Zoom</option>
-                        <option value="float" ${layer.hover_effect === 'float' ? 'selected' : ''}>Float</option>
-                        <option value="glow" ${layer.hover_effect === 'glow' ? 'selected' : ''}>Glow</option>
-                        <option value="rotate" ${layer.hover_effect === 'rotate' ? 'selected' : ''}>Rotate</option>
-                        <option value="tilt" ${layer.hover_effect === 'tilt' ? 'selected' : ''}>Tilt</option>
-                    </select>
-                </div>
-                <div class="kreatus-form-group">
-                    <label>Motion Efekti</label>
-                    <select id="hsc-layer-motion-effect" class="kreatus-select">
-                        <option value="none" ${layer.motion_effect === 'none' ? 'selected' : ''}>Yok</option>
-                        <option value="floating" ${layer.motion_effect === 'floating' ? 'selected' : ''}>Floating (Yüzen)</option>
-                        <option value="pulse" ${layer.motion_effect === 'pulse' ? 'selected' : ''}>Pulse (Nabız)</option>
-                        <option value="swing" ${layer.motion_effect === 'swing' ? 'selected' : ''}>Swing (Sallanma)</option>
-                        <option value="bounce" ${layer.motion_effect === 'bounce' ? 'selected' : ''}>Bounce (Zıplama)</option>
-                        <option value="wiggle" ${layer.motion_effect === 'wiggle' ? 'selected' : ''}>Wiggle (Titreme)</option>
-                        <option value="rotate" ${layer.motion_effect === 'rotate' ? 'selected' : ''}>Rotate 360</option>
-                    </select>
-                </div>
-            `;
-            
-            // Animasyon ayarları
-            html += `
-                <div class="kreatus-form-group">
-                    <label>Giriş Animasyonu</label>
-                    <select id="hsc-layer-anim-in" class="kreatus-select">
-                        ${hscGetAnimOptions('in', layer.animation_in)}
-                    </select>
-                </div>
-                <div class="kreatus-form-group">
-                    <label>Gecikme (ms)</label>
-                    <input type="number" id="hsc-layer-delay-in" class="kreatus-input" value="${layer.animation_delay_in || 0}">
-                </div>
-                <div class="kreatus-form-group">
-                    <label>Çıkış Animasyonu</label>
-                    <select id="hsc-layer-anim-out" class="kreatus-select">
-                        ${hscGetAnimOptions('out', layer.animation_out)}
-                    </select>
-                </div>
-            `;
-            
-            $('#hsc-layer-settings-content').html(html);
-        }
-        
+
         function hscGetAnimOptions(type, selected) {
             const anims = {
                 'in': {
@@ -2579,167 +2457,115 @@ private function render_editor_scripts() {
             return '';
         }
         
-        // DRAG & RESIZE (Optimize)
+        // DRAG & RESIZE - GLOBAL VARIABLES (eski kod gibi)
+        let hscDraggedLayer = null;
+        let hscDragOffsetX = 0;
+        let hscDragOffsetY = 0;
+        let hscSelectedLayerIndex = null;
+
+        // DRAG & RESIZE - ONE TIME INITIALIZATION
         function hscInitDragResize() {
-            let activeLayer = null;
-            let startX = 0;
-            let startY = 0;
-            let startLeft = 0;
-            let startTop = 0;
-            let startWidth = 0;
-            let startHeight = 0;
-            let isResizing = false;
-            let resizeDirection = '';
-            let isDragging = false;
-            
-            // Layer click - select
-            $(document).off('mousedown', '.hsc-preview-layer').on('mousedown', '.hsc-preview-layer', function(e) {
-                const index = $(this).data('layer-index');
+            // Remove previous bindings to prevent duplication
+            $(document).off('mousedown.hscDrag');
+            $(document).off('mousemove.hscDrag');
+            $(document).off('mouseup.hscDrag');
+
+            // Layer mousedown - start dragging (eski kod gibi basit)
+            $(document).on('mousedown.hscDrag', '.hsc-preview-layer', function(e) {
+                if (!$('#hsc-fullscreen-modal').is(':visible')) return;
+
+                const $layer = $(this);
+                const layerIndex = parseInt($layer.data('layer-index'));
                 const slide = hscSliderData.slides[hscCurrentSlideIndex];
-                const layer = slide.layers[index];
-                
+                if (!slide || !slide.layers[layerIndex]) return;
+
+                const layer = slide.layers[layerIndex];
                 if (layer.locked) return;
-                
-                // Resize handle check
-                if ($(e.target).hasClass('hsc-resize-handle')) {
-                    isResizing = true;
-                    resizeDirection = $(e.target).attr('class').split(' ')[1];
-                    activeLayer = this;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    startLeft = parseInt($(this).css('left'));
-                    startTop = parseInt($(this).css('top'));
-                    startWidth = $(this).outerWidth();
-                    startHeight = $(this).outerHeight();
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                }
-                
-                // Normal drag
-                hscSelectLayer(index);
-                activeLayer = this;
-                isDragging = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startLeft = parseInt($(this).css('left'));
-                startTop = parseInt($(this).css('top'));
-                
-                $(this).css('cursor', 'grabbing');
+
+                // Select layer (skip preview render during drag)
+                $('.hsc-preview-layer').removeClass('selected');
+                $layer.addClass('selected');
+                hscSelectedLayerIndex = layerIndex;
+                hscSelectLayer(layerIndex, true); // true = skipPreviewRender
+
+                // Start dragging
+                hscDraggedLayer = this;
+                const rect = hscDraggedLayer.getBoundingClientRect();
+                const container = $('#hsc-preview-slide')[0].getBoundingClientRect();
+
+                hscDragOffsetX = e.clientX - rect.left;
+                hscDragOffsetY = e.clientY - rect.top;
+
+                $layer.css('cursor', 'grabbing');
                 e.preventDefault();
                 e.stopPropagation();
             });
-            
-            // Mouse move (Optimize - requestAnimationFrame kullan)
-            let rafId = null;
-            $(document).off('mousemove.hscDrag').on('mousemove.hscDrag', function(e) {
-                if (!activeLayer) return;
-                
-                if (rafId) {
-                    cancelAnimationFrame(rafId);
-                }
-                
-                rafId = requestAnimationFrame(() => {
-                    const deltaX = e.clientX - startX;
-                    const deltaY = e.clientY - startY;
-                    
-                    if (isResizing) {
-                        const $layer = $(activeLayer);
-                        let newWidth = startWidth;
-                        let newHeight = startHeight;
-                        let newLeft = startLeft;
-                        let newTop = startTop;
-                        
-                        if (resizeDirection.includes('e')) {
-                            newWidth = startWidth + deltaX;
-                        }
-                        if (resizeDirection.includes('w')) {
-                            newWidth = startWidth - deltaX;
-                            newLeft = startLeft + deltaX;
-                        }
-                        if (resizeDirection.includes('s')) {
-                            newHeight = startHeight + deltaY;
-                        }
-                        if (resizeDirection.includes('n')) {
-                            newHeight = startHeight - deltaY;
-                            newTop = startTop + deltaY;
-                        }
-                        
-                        newWidth = Math.max(50, newWidth);
-                        newHeight = Math.max(30, newHeight);
-                        
-                        $layer.css({
-                            width: newWidth + 'px',
-                            height: newHeight + 'px',
-                            left: newLeft + 'px',
-                            top: newTop + 'px'
-                        });
-                        
-                        $layer.find('.hsc-layer-badge').text(`${Math.round(newWidth)}×${Math.round(newHeight)}px • ${newLeft}px, ${newTop}px`);
-                        
-                    } else if (isDragging) {
-                        let newLeft = startLeft + deltaX;
-                        let newTop = startTop + deltaY;
-                        
-                        const container = $('#hsc-preview-slide')[0].getBoundingClientRect();
-                        const layerWidth = $(activeLayer).outerWidth();
-                        const layerHeight = $(activeLayer).outerHeight();
-                        
-                        newLeft = Math.max(0, Math.min(newLeft, container.width - layerWidth));
-                        newTop = Math.max(0, Math.min(newTop, container.height - layerHeight));
-                        
-                        $(activeLayer).css({ left: newLeft + 'px', top: newTop + 'px' });
-                        $(activeLayer).find('.hsc-layer-badge').text(`${hscGetLayerTitle(hscSliderData.slides[hscCurrentSlideIndex].layers[hscCurrentLayerIndex])} • ${Math.round(newLeft)}px, ${Math.round(newTop)}px`);
-                    }
+
+            // Global mousemove (eski kod gibi)
+            $(document).on('mousemove.hscDrag', function(e) {
+                if (!hscDraggedLayer || !$('#hsc-fullscreen-modal').is(':visible')) return;
+
+                const container = $('#hsc-preview-slide')[0].getBoundingClientRect();
+                let newX = e.clientX - container.left - hscDragOffsetX;
+                let newY = e.clientY - container.top - hscDragOffsetY;
+
+                // Keep within bounds
+                const $layer = $(hscDraggedLayer);
+                const layerWidth = $layer.outerWidth();
+                const layerHeight = $layer.outerHeight();
+
+                newX = Math.max(0, Math.min(newX, container.width - layerWidth));
+                newY = Math.max(0, Math.min(newY, container.height - layerHeight));
+
+                // Update position
+                $layer.css({
+                    left: newX + 'px',
+                    top: newY + 'px'
                 });
+
+                // Update badge
+                $layer.find('.hsc-layer-badge').text(`${Math.round(newX)}px, ${Math.round(newY)}px`);
             });
-            
-            // Mouse up
-            $(document).off('mouseup.hscDrag').on('mouseup.hscDrag', function() {
-                if (!activeLayer) return;
-                
-                const $layer = $(activeLayer);
-                const layerIndex = $layer.data('layer-index');
+
+            // Global mouseup (eski kod gibi)
+            $(document).on('mouseup.hscDrag', function(e) {
+                if (!hscDraggedLayer) return;
+
+                const $layer = $(hscDraggedLayer);
+                const layerIndex = parseInt($layer.data('layer-index'));
                 const slide = hscSliderData.slides[hscCurrentSlideIndex];
-                const layer = slide.layers[layerIndex];
-                
-                layer.pos_x = parseInt($layer.css('left'));
-                layer.pos_y = parseInt($layer.css('top'));
-                
-                if (isResizing) {
-                    layer.width = $layer.outerWidth();
-                    layer.height = $layer.outerHeight();
+                if (slide && slide.layers[layerIndex]) {
+                    const layer = slide.layers[layerIndex];
+
+                    // Save new position
+                    const newX = parseInt($layer.css('left'));
+                    const newY = parseInt($layer.css('top'));
+                    layer.pos_x = newX;
+                    layer.pos_y = newY;
+
+                    // Update form inputs
+                    $('#hsc-layer-pos-x').val(newX);
+                    $('#hsc-layer-pos-y').val(newY);
                 }
-                
-                // Update form inputs
-                $('#hsc-layer-pos-x').val(layer.pos_x);
-                $('#hsc-layer-pos-y').val(layer.pos_y);
-                if (isResizing) {
-                    $('#hsc-layer-width').val(layer.width);
-                    $('#hsc-layer-height').val(layer.height);
-                }
-                
+
                 $layer.css('cursor', 'move');
-                activeLayer = null;
-                isResizing = false;
-                isDragging = false;
-                resizeDirection = '';
+                hscDraggedLayer = null;
             });
         }
-        
+
         // Keyboard shortcuts
-        $(document).off('keydown.hscKeys').on('keydown.hscKeys', function(e) {
+        $(document).on('keydown', function(e) {
             if (!$('#hsc-fullscreen-modal').is(':visible')) return;
             if (hscCurrentSlideIndex === -1 || hscCurrentLayerIndex === -1) return;
-            
+
             const slide = hscSliderData.slides[hscCurrentSlideIndex];
             const layer = slide.layers[hscCurrentLayerIndex];
-            
+
             if (layer.locked) return;
-            
+
             const step = e.shiftKey ? 10 : 1;
             let changed = false;
-            
+
             if (e.key === 'ArrowLeft') {
                 layer.pos_x = Math.max(0, layer.pos_x - step);
                 changed = true;
@@ -2771,14 +2597,14 @@ private function render_editor_scripts() {
                     e.preventDefault();
                 }
             }
-            
+
             if (changed) {
                 $('#hsc-layer-pos-x').val(layer.pos_x);
                 $('#hsc-layer-pos-y').val(layer.pos_y);
-                hscUpdatePreviewLayers();
+                hscRenderPreview();
             }
         });
-        
+
         // Preview slide navigation
         window.hscPrevPreviewSlide = function() {
             if (hscCurrentSlideIndex > 0) {
