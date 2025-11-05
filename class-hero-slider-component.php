@@ -146,18 +146,19 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                                 <?php $this->render_particles($slide['particle_effect'] ?? 'none'); ?>
 
                                 <?php if (!empty($slide['bg_overlay'])): ?>
-                                    <?php 
+                                    <?php
                                     $overlay_type = $slide['bg_overlay_type'] ?? 'color';
+                                    $overlay_opacity = $slide['bg_overlay_opacity'] ?? 0.5;
                                     $overlay_style = '';
-                                    
+
                                     if ($overlay_type === 'gradient') {
-                                        $gradient_start = $slide['bg_overlay_gradient_start'] ?? 'rgba(0,0,0,0.7)';
-                                        $gradient_end = $slide['bg_overlay_gradient_end'] ?? 'rgba(0,0,0,0.3)';
+                                        $gradient_start = $slide['bg_overlay_gradient_start'] ?? '#000000';
+                                        $gradient_end = $slide['bg_overlay_gradient_end'] ?? '#000000';
                                         $gradient_direction = $slide['bg_overlay_gradient_direction'] ?? 'to top';
-                                        $overlay_style = "background: linear-gradient({$gradient_direction}, {$gradient_start}, {$gradient_end});";
+                                        $overlay_style = "background: linear-gradient({$gradient_direction}, {$gradient_start}, {$gradient_end}); opacity: {$overlay_opacity};";
                                     } else {
-                                        $overlay_color = $slide['bg_overlay_color'] ?? 'rgba(0,0,0,0.5)';
-                                        $overlay_style = "background-color: {$overlay_color};";
+                                        $overlay_color = $slide['bg_overlay_color'] ?? '#000000';
+                                        $overlay_style = "background-color: {$overlay_color}; opacity: {$overlay_opacity};";
                                     }
                                     ?>
                                     <div class="hsc-slide-overlay" style="<?php echo esc_attr($overlay_style); ?>"></div>
@@ -548,6 +549,32 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
         }
         .hsc-ken-burns {
             animation: hscKenBurns 20s ease-in-out infinite;
+        }
+
+        /* Motion Animations */
+        @keyframes hsc-motion-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes hsc-motion-pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+        @keyframes hsc-motion-swing {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            75% { transform: rotate(-5deg); }
+        }
+        @keyframes hsc-motion-tilt {
+            0%, 100% { transform: perspective(400px) rotateY(0deg); }
+            50% { transform: perspective(400px) rotateY(10deg); }
+        }
+        @keyframes hsc-motion-glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
         }
 
         .hsc-particles-container {
@@ -1015,7 +1042,13 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                                     <div class="kreatus-form-group">
                                         <label><input type="checkbox" id="hsc-slide-overlay" class="kreatus-checkbox"> Overlay Aktif</label>
                                     </div>
-                                    
+
+                                    <div class="kreatus-form-group">
+                                        <label>Overlay Opaklık</label>
+                                        <input type="range" id="hsc-slide-overlay-opacity" class="kreatus-range" min="0" max="1" step="0.05" value="0.5">
+                                        <span id="hsc-overlay-opacity-value">0.5</span>
+                                    </div>
+
                                     <div class="kreatus-form-group">
                                         <label>Overlay Tipi</label>
                                         <select id="hsc-slide-overlay-type" class="kreatus-select">
@@ -1023,29 +1056,33 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                                             <option value="gradient">Gradient</option>
                                         </select>
                                     </div>
-                                    
-                                    <div class="kreatus-form-group hsc-grid-full">
-                                        <label>Overlay Rengi (RGBA)</label>
-                                        <input type="text" id="hsc-slide-overlay-color" class="kreatus-input" value="rgba(0,0,0,0.5)">
+
+                                    <div class="kreatus-form-group hsc-grid-full" id="hsc-overlay-color-group">
+                                        <label>Overlay Rengi</label>
+                                        <input type="color" id="hsc-slide-overlay-color" class="kreatus-color" value="#000000">
                                     </div>
-                                    
-                                    <div class="kreatus-form-group">
+
+                                    <div class="kreatus-form-group" id="hsc-overlay-gradient-start-group" style="display: none;">
                                         <label>Gradient Başlangıç</label>
-                                        <input type="text" id="hsc-slide-overlay-grad-start" class="kreatus-input" value="rgba(0,0,0,0.7)">
+                                        <input type="color" id="hsc-slide-overlay-grad-start" class="kreatus-color" value="#000000">
                                     </div>
-                                    
-                                    <div class="kreatus-form-group">
+
+                                    <div class="kreatus-form-group" id="hsc-overlay-gradient-end-group" style="display: none;">
                                         <label>Gradient Bitiş</label>
-                                        <input type="text" id="hsc-slide-overlay-grad-end" class="kreatus-input" value="rgba(0,0,0,0)">
+                                        <input type="color" id="hsc-slide-overlay-grad-end" class="kreatus-color" value="#000000">
                                     </div>
-                                    
-                                    <div class="kreatus-form-group">
+
+                                    <div class="kreatus-form-group" id="hsc-overlay-gradient-dir-group" style="display: none;">
                                         <label>Gradient Yön</label>
                                         <select id="hsc-slide-overlay-grad-dir" class="kreatus-select">
                                             <option value="to top">Yukarı</option>
                                             <option value="to bottom">Aşağı</option>
                                             <option value="to left">Sola</option>
                                             <option value="to right">Sağa</option>
+                                            <option value="to top right">Yukarı Sağ</option>
+                                            <option value="to top left">Yukarı Sol</option>
+                                            <option value="to bottom right">Aşağı Sağ</option>
+                                            <option value="to bottom left">Aşağı Sol</option>
                                         </select>
                                     </div>
                                     
@@ -1544,10 +1581,11 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                         background_image: '',
                         background_video: '',
                         bg_overlay: false,
+                        bg_overlay_opacity: 0.5,
                         bg_overlay_type: 'color',
-                        bg_overlay_color: 'rgba(0,0,0,0.5)',
-                        bg_overlay_gradient_start: 'rgba(0,0,0,0.7)',
-                        bg_overlay_gradient_end: 'rgba(0,0,0,0)',
+                        bg_overlay_color: '#000000',
+                        bg_overlay_gradient_start: '#000000',
+                        bg_overlay_gradient_end: '#000000',
                         bg_overlay_gradient_direction: 'to top',
                         slide_transition: 'fade',
                         particle_effect: 'none',
@@ -1619,10 +1657,11 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                     background_image: '',
                     background_video: '',
                     bg_overlay: false,
+                    bg_overlay_opacity: 0.5,
                     bg_overlay_type: 'color',
-                    bg_overlay_color: 'rgba(0,0,0,0.5)',
-                    bg_overlay_gradient_start: 'rgba(0,0,0,0.7)',
-                    bg_overlay_gradient_end: 'rgba(0,0,0,0)',
+                    bg_overlay_color: '#000000',
+                    bg_overlay_gradient_start: '#000000',
+                    bg_overlay_gradient_end: '#000000',
                     bg_overlay_gradient_direction: 'to top',
                     slide_transition: 'fade',
                     particle_effect: 'none',
@@ -1678,15 +1717,26 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                 $('#hsc-slide-bg-image').val(slide.background_image || '');
                 $('#hsc-slide-bg-video').val(slide.background_video || '');
                 $('#hsc-slide-overlay').prop('checked', slide.bg_overlay === true);
+                $('#hsc-slide-overlay-opacity').val(slide.bg_overlay_opacity || 0.5);
+                $('#hsc-overlay-opacity-value').text(slide.bg_overlay_opacity || 0.5);
                 $('#hsc-slide-overlay-type').val(slide.bg_overlay_type || 'color');
-                $('#hsc-slide-overlay-color').val(slide.bg_overlay_color || 'rgba(0,0,0,0.5)');
-                $('#hsc-slide-overlay-grad-start').val(slide.bg_overlay_gradient_start || 'rgba(0,0,0,0.7)');
-                $('#hsc-slide-overlay-grad-end').val(slide.bg_overlay_gradient_end || 'rgba(0,0,0,0)');
+                $('#hsc-slide-overlay-color').val(slide.bg_overlay_color || '#000000');
+                $('#hsc-slide-overlay-grad-start').val(slide.bg_overlay_gradient_start || '#000000');
+                $('#hsc-slide-overlay-grad-end').val(slide.bg_overlay_gradient_end || '#000000');
                 $('#hsc-slide-overlay-grad-dir').val(slide.bg_overlay_gradient_direction || 'to top');
                 $('#hsc-slide-transition').val(slide.slide_transition || 'fade');
                 $('#hsc-slide-particle').val(slide.particle_effect || 'none');
                 $('#hsc-slide-ken-burns').prop('checked', slide.bg_ken_burns === true);
-                
+
+                // Toggle overlay type visibility
+                if (slide.bg_overlay_type === 'gradient') {
+                    $('#hsc-overlay-color-group').hide();
+                    $('#hsc-overlay-gradient-start-group, #hsc-overlay-gradient-end-group, #hsc-overlay-gradient-dir-group').show();
+                } else {
+                    $('#hsc-overlay-color-group').show();
+                    $('#hsc-overlay-gradient-start-group, #hsc-overlay-gradient-end-group, #hsc-overlay-gradient-dir-group').hide();
+                }
+
                 $('#hsc-slide-settings').show();
                 
                 hscRenderLayersList();
@@ -1695,9 +1745,9 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
             }
             
             // SAVE SLIDE SETTINGS
-            $(document).on('change', '#hsc-slide-label, #hsc-slide-bg-type, #hsc-slide-bg-color, #hsc-slide-bg-image, #hsc-slide-bg-video, #hsc-slide-overlay, #hsc-slide-overlay-type, #hsc-slide-overlay-color, #hsc-slide-overlay-grad-start, #hsc-slide-overlay-grad-end, #hsc-slide-overlay-grad-dir, #hsc-slide-transition, #hsc-slide-particle, #hsc-slide-ken-burns', function() {
+            $(document).on('change input', '#hsc-slide-label, #hsc-slide-bg-type, #hsc-slide-bg-color, #hsc-slide-bg-image, #hsc-slide-bg-video, #hsc-slide-overlay, #hsc-slide-overlay-opacity, #hsc-slide-overlay-type, #hsc-slide-overlay-color, #hsc-slide-overlay-grad-start, #hsc-slide-overlay-grad-end, #hsc-slide-overlay-grad-dir, #hsc-slide-transition, #hsc-slide-particle, #hsc-slide-ken-burns', function() {
                 if (hscCurrentSlideIndex === -1) return;
-                
+
                 const slide = hscSliderData.slides[hscCurrentSlideIndex];
                 slide.admin_label = $('#hsc-slide-label').val();
                 slide.background_type = $('#hsc-slide-bg-type').val();
@@ -1705,6 +1755,7 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                 slide.background_image = $('#hsc-slide-bg-image').val();
                 slide.background_video = $('#hsc-slide-bg-video').val();
                 slide.bg_overlay = $('#hsc-slide-overlay').is(':checked');
+                slide.bg_overlay_opacity = parseFloat($('#hsc-slide-overlay-opacity').val()) || 0.5;
                 slide.bg_overlay_type = $('#hsc-slide-overlay-type').val();
                 slide.bg_overlay_color = $('#hsc-slide-overlay-color').val();
                 slide.bg_overlay_gradient_start = $('#hsc-slide-overlay-grad-start').val();
@@ -1713,9 +1764,26 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                 slide.slide_transition = $('#hsc-slide-transition').val();
                 slide.particle_effect = $('#hsc-slide-particle').val();
                 slide.bg_ken_burns = $('#hsc-slide-ken-burns').is(':checked');
-                
+
                 hscRenderSlidesList();
-                hscRenderPreview();
+                hscRenderPreview(true); // Force full render for slide bg changes
+            });
+
+            // Overlay opacity slider value display
+            $(document).on('input', '#hsc-slide-overlay-opacity', function() {
+                $('#hsc-overlay-opacity-value').text($(this).val());
+            });
+
+            // Overlay type toggle
+            $(document).on('change', '#hsc-slide-overlay-type', function() {
+                const type = $(this).val();
+                if (type === 'gradient') {
+                    $('#hsc-overlay-color-group').hide();
+                    $('#hsc-overlay-gradient-start-group, #hsc-overlay-gradient-end-group, #hsc-overlay-gradient-dir-group').show();
+                } else {
+                    $('#hsc-overlay-color-group').show();
+                    $('#hsc-overlay-gradient-start-group, #hsc-overlay-gradient-end-group, #hsc-overlay-gradient-dir-group').hide();
+                }
             });
             
             // DELETE SLIDE
@@ -1916,11 +1984,11 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                             <textarea id="hsc-layer-content" class="kreatus-textarea" rows="3">${hscEscape(layer.content || '')}</textarea>
                         </div>
                         <div class="kreatus-form-group">
-                            <label>Yazı Boyutu</label>
+                            <label>Yazı Boyutu (px)</label>
                             <input type="number" id="hsc-layer-font-size" class="kreatus-input" value="${layer.font_size || 16}">
                         </div>
                         <div class="kreatus-form-group">
-                            <label>Renk</label>
+                            <label>Yazı Rengi</label>
                             <input type="color" id="hsc-layer-color" class="kreatus-color" value="${layer.color || '#ffffff'}">
                         </div>
                         <div class="kreatus-form-group">
@@ -1930,6 +1998,7 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                                 <option value="400" ${layer.font_weight == 400 ? 'selected' : ''}>Normal</option>
                                 <option value="600" ${layer.font_weight == 600 ? 'selected' : ''}>Yarı Kalın</option>
                                 <option value="700" ${layer.font_weight == 700 ? 'selected' : ''}>Kalın</option>
+                                <option value="900" ${layer.font_weight == 900 ? 'selected' : ''}>Çok Kalın</option>
                             </select>
                         </div>
                         <div class="kreatus-form-group">
@@ -1938,6 +2007,35 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                                 <option value="left" ${layer.text_align === 'left' ? 'selected' : ''}>Sol</option>
                                 <option value="center" ${layer.text_align === 'center' ? 'selected' : ''}>Orta</option>
                                 <option value="right" ${layer.text_align === 'right' ? 'selected' : ''}>Sağ</option>
+                            </select>
+                        </div>
+                        <div class="kreatus-form-group">
+                            <label>Satır Yüksekliği</label>
+                            <input type="number" id="hsc-layer-line-height" class="kreatus-input" value="${layer.line_height || 1.5}" step="0.1" min="0.5" max="3">
+                        </div>
+                        <div class="kreatus-form-group">
+                            <label>Harf Aralığı (px)</label>
+                            <input type="number" id="hsc-layer-letter-spacing" class="kreatus-input" value="${layer.letter_spacing || 0}" step="0.5">
+                        </div>
+                        <div class="kreatus-form-group">
+                            <label><input type="checkbox" id="hsc-layer-text-glow" class="kreatus-checkbox" ${layer.text_glow ? 'checked' : ''}> Glow Efekti</label>
+                        </div>
+                        <div class="kreatus-form-group" id="hsc-glow-settings" style="display: ${layer.text_glow ? 'block' : 'none'};">
+                            <label>Glow Rengi</label>
+                            <input type="color" id="hsc-layer-text-glow-color" class="kreatus-color" value="${layer.text_glow_color || '#8B5CF6'}">
+                        </div>
+                        <div class="kreatus-form-group" style="display: ${layer.text_glow ? 'block' : 'none'};">
+                            <label>Glow Bulanıklık (px)</label>
+                            <input type="number" id="hsc-layer-text-glow-blur" class="kreatus-input" value="${layer.text_glow_blur || 20}" min="0" max="100">
+                        </div>
+                        <div class="kreatus-form-group">
+                            <label>Motion Animasyon</label>
+                            <select id="hsc-layer-motion-animation" class="kreatus-select">
+                                <option value="none" ${(layer.motion_animation || 'none') === 'none' ? 'selected' : ''}>Yok</option>
+                                <option value="float" ${layer.motion_animation === 'float' ? 'selected' : ''}>Float (Yüzen)</option>
+                                <option value="pulse" ${layer.motion_animation === 'pulse' ? 'selected' : ''}>Pulse (Nabız)</option>
+                                <option value="swing" ${layer.motion_animation === 'swing' ? 'selected' : ''}>Swing (Sallanma)</option>
+                                <option value="glitch" ${layer.motion_animation === 'glitch' ? 'selected' : ''}>Glitch</option>
                             </select>
                         </div>
                     `;
@@ -1953,6 +2051,15 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                             <input type="text" id="hsc-layer-alt-text" class="kreatus-input" value="${hscEscape(layer.alt_text || '')}">
                         </div>
                         <div class="kreatus-form-group">
+                            <label>Border Radius (px)</label>
+                            <input type="number" id="hsc-layer-border-radius" class="kreatus-input" value="${layer.border_radius || 0}" min="0">
+                        </div>
+                        <div class="kreatus-form-group">
+                            <label>Opaklık</label>
+                            <input type="range" id="hsc-layer-opacity" class="kreatus-range" min="0" max="1" step="0.1" value="${layer.opacity !== undefined ? layer.opacity : 1}">
+                            <span id="hsc-layer-opacity-value">${layer.opacity !== undefined ? layer.opacity : 1}</span>
+                        </div>
+                        <div class="kreatus-form-group">
                             <label>Hover Efekti</label>
                             <select id="hsc-layer-hover-effect" class="kreatus-select">
                                 <option value="none" ${layer.hover_effect === 'none' ? 'selected' : ''}>Yok</option>
@@ -1960,6 +2067,16 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                                 <option value="float" ${layer.hover_effect === 'float' ? 'selected' : ''}>Float</option>
                                 <option value="glow" ${layer.hover_effect === 'glow' ? 'selected' : ''}>Glow</option>
                                 <option value="rotate" ${layer.hover_effect === 'rotate' ? 'selected' : ''}>Rotate</option>
+                            </select>
+                        </div>
+                        <div class="kreatus-form-group">
+                            <label>Motion Animasyon</label>
+                            <select id="hsc-layer-motion-animation" class="kreatus-select">
+                                <option value="none" ${(layer.motion_animation || 'none') === 'none' ? 'selected' : ''}>Yok</option>
+                                <option value="float" ${layer.motion_animation === 'float' ? 'selected' : ''}>Float (Yüzen)</option>
+                                <option value="pulse" ${layer.motion_animation === 'pulse' ? 'selected' : ''}>Pulse (Nabız)</option>
+                                <option value="swing" ${layer.motion_animation === 'swing' ? 'selected' : ''}>Swing (Sallanma)</option>
+                                <option value="tilt" ${layer.motion_animation === 'tilt' ? 'selected' : ''}>Tilt (Eğilme)</option>
                             </select>
                         </div>
                         <div class="kreatus-form-group hsc-grid-full">
@@ -2091,10 +2208,19 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                     layer.color = $('#hsc-layer-color').val();
                     layer.font_weight = parseInt($('#hsc-layer-font-weight').val()) || 400;
                     layer.text_align = $('#hsc-layer-text-align').val();
+                    layer.line_height = parseFloat($('#hsc-layer-line-height').val()) || 1.5;
+                    layer.letter_spacing = parseFloat($('#hsc-layer-letter-spacing').val()) || 0;
+                    layer.text_glow = $('#hsc-layer-text-glow').is(':checked');
+                    layer.text_glow_color = $('#hsc-layer-text-glow-color').val();
+                    layer.text_glow_blur = parseInt($('#hsc-layer-text-glow-blur').val()) || 20;
+                    layer.motion_animation = $('#hsc-layer-motion-animation').val();
                 } else if (layer.type === 'image') {
                     layer.image_url = $('#hsc-layer-image-url').val();
                     layer.alt_text = $('#hsc-layer-alt-text').val();
+                    layer.border_radius = parseInt($('#hsc-layer-border-radius').val()) || 0;
+                    layer.opacity = parseFloat($('#hsc-layer-opacity').val()) || 1;
                     layer.hover_effect = $('#hsc-layer-hover-effect').val();
+                    layer.motion_animation = $('#hsc-layer-motion-animation').val();
                     layer.link_url = $('#hsc-layer-link-url').val();
                     layer.link_new_tab = $('#hsc-layer-link-new-tab').is(':checked');
                 } else if (layer.type === 'button') {
@@ -2107,11 +2233,24 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                     layer.link_url = $('#hsc-layer-link-url').val();
                     layer.link_new_tab = $('#hsc-layer-link-new-tab').is(':checked');
                 }
-                
+
                 hscRenderLayersList();
                 hscRenderPreview();
             });
-            
+
+            // Glow checkbox toggle
+            $(document).on('change', '#hsc-layer-text-glow', function() {
+                const isChecked = $(this).is(':checked');
+                $('#hsc-glow-settings').toggle(isChecked);
+                $(this).closest('.kreatus-form-group').next().toggle(isChecked);
+                $(this).closest('.kreatus-form-group').next().next().toggle(isChecked);
+            });
+
+            // Opacity slider value display
+            $(document).on('input', '#hsc-layer-opacity', function() {
+                $('#hsc-layer-opacity-value').text($(this).val());
+            });
+
             // DELETE LAYER
             $(document).on('click', '.hsc-delete-layer', function(e) {
                 e.stopPropagation();
@@ -2199,9 +2338,9 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
             });
             
             // RENDER PREVIEW
-            function hscRenderPreview() {
+            function hscRenderPreview(forceFullRender = false) {
                 const $preview = $('#hsc-preview-slide');
-                
+
                 if (hscCurrentSlideIndex === -1 || !hscSliderData.slides[hscCurrentSlideIndex]) {
                     $preview.html(`
                         <div class="hsc-preview-placeholder">
@@ -2214,9 +2353,15 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                     `);
                     return;
                 }
-                
+
                 const slide = hscSliderData.slides[hscCurrentSlideIndex];
-                
+
+                // Check if we can do partial update instead of full render
+                if (!forceFullRender && $preview.find('.hsc-preview-layer').length > 0) {
+                    hscUpdateLayersOnly();
+                    return;
+                }
+
                 // Background
                 let bgStyle = '';
                 if (slide.background_type === 'color') {
@@ -2226,44 +2371,54 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                 } else if (slide.background_type === 'video' && slide.background_video) {
                     bgStyle = `background-color: ${slide.background_color || '#000'};`;
                 }
-                
+
                 // Overlay
                 let overlayHTML = '';
                 if (slide.bg_overlay) {
                     let overlayStyle = '';
+                    const opacity = slide.bg_overlay_opacity || 0.5;
                     if (slide.bg_overlay_type === 'gradient') {
-                        overlayStyle = `background: linear-gradient(${slide.bg_overlay_gradient_direction}, ${slide.bg_overlay_gradient_start}, ${slide.bg_overlay_gradient_end});`;
+                        const startColor = slide.bg_overlay_gradient_start || '#000000';
+                        const endColor = slide.bg_overlay_gradient_end || '#000000';
+                        overlayStyle = `background: linear-gradient(${slide.bg_overlay_gradient_direction || 'to top'}, ${startColor}, ${endColor});`;
                     } else {
-                        overlayStyle = `background-color: ${slide.bg_overlay_color};`;
+                        const color = slide.bg_overlay_color || '#000000';
+                        overlayStyle = `background-color: ${color};`;
                     }
-                    overlayHTML = `<div style="position: absolute; inset: 0; ${overlayStyle} z-index: 1; pointer-events: none;"></div>`;
+                    overlayHTML = `<div class="hsc-preview-overlay" style="position: absolute; inset: 0; ${overlayStyle} opacity: ${opacity}; z-index: 1; pointer-events: none;"></div>`;
                 }
-                
+
                 // Video
                 let videoHTML = '';
                 if (slide.background_type === 'video' && slide.background_video) {
                     videoHTML = `
-                        <div style="position: absolute; top: 50%; left: 50%; min-width: 100%; min-height: 100%; transform: translate(-50%, -50%); z-index: 0;">
+                        <div class="hsc-preview-video" style="position: absolute; top: 50%; left: 50%; min-width: 100%; min-height: 100%; transform: translate(-50%, -50%); z-index: 0;">
                             <video autoplay muted loop playsinline style="width: 100%; height: auto;">
                                 <source src="${slide.background_video}" type="video/mp4">
                             </video>
                         </div>
                     `;
                 }
-                
+
+                // Particle effects
+                let particleHTML = '';
+                if (slide.particle_effect && slide.particle_effect !== 'none') {
+                    particleHTML = `<div class="hsc-particles hsc-particles-${slide.particle_effect}" style="position: absolute; inset: 0; z-index: 5; pointer-events: none;"></div>`;
+                }
+
                 // Layers
                 let layersHTML = '';
                 slide.layers.forEach((layer, index) => {
                     if (layer.hidden) return;
-                    
+
                     const styles = hscGetPreviewLayerStyles(layer);
                     const content = hscGetPreviewLayerContent(layer);
                     const isSelected = (index === hscCurrentLayerIndex);
                     const isLocked = layer.locked;
-                    
+
                     layersHTML += `
-                        <div class="hsc-preview-layer ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}" 
-                             data-layer-index="${index}" 
+                        <div class="hsc-preview-layer ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}"
+                             data-layer-index="${index}"
                              style="${styles}">
                             <div class="hsc-layer-badge">
                                 ${hscGetLayerTitle(layer)} • ${layer.pos_x}px, ${layer.pos_y}px
@@ -2278,63 +2433,173 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                         </div>
                     `;
                 });
-                
+
                 $preview.html(`
-                    <div style="position: absolute; inset: 0; ${bgStyle} z-index: 0;"></div>
+                    <div class="hsc-preview-bg" style="position: absolute; inset: 0; ${bgStyle} z-index: 0;"></div>
                     ${videoHTML}
                     ${overlayHTML}
-                    <div style="position: relative; width: 100%; height: 100%; z-index: 2;">
+                    ${particleHTML}
+                    <div class="hsc-preview-layers-container" style="position: relative; width: 100%; height: 100%; z-index: 2;">
                         ${layersHTML}
                     </div>
                 `);
-                
+
+                // Init particles
+                if (slide.particle_effect && slide.particle_effect !== 'none') {
+                    hscInitParticles(slide.particle_effect);
+                }
+
                 // Init drag & resize
+                hscInitDragResize();
+            }
+
+            // FAST UPDATE - Only update layers without re-rendering video/background
+            function hscUpdateLayersOnly() {
+                if (hscCurrentSlideIndex === -1) return;
+
+                const slide = hscSliderData.slides[hscCurrentSlideIndex];
+                const $layersContainer = $('#hsc-preview-slide .hsc-preview-layers-container');
+
+                if ($layersContainer.length === 0) {
+                    hscRenderPreview(true);
+                    return;
+                }
+
+                // Update layers
+                let layersHTML = '';
+                slide.layers.forEach((layer, index) => {
+                    if (layer.hidden) return;
+
+                    const styles = hscGetPreviewLayerStyles(layer);
+                    const content = hscGetPreviewLayerContent(layer);
+                    const isSelected = (index === hscCurrentLayerIndex);
+                    const isLocked = layer.locked;
+
+                    layersHTML += `
+                        <div class="hsc-preview-layer ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}"
+                             data-layer-index="${index}"
+                             style="${styles}">
+                            <div class="hsc-layer-badge">
+                                ${hscGetLayerTitle(layer)} • ${layer.pos_x}px, ${layer.pos_y}px
+                            </div>
+                            ${content}
+                            ${isSelected && !isLocked ? `
+                                <div class="hsc-resize-handle nw"></div>
+                                <div class="hsc-resize-handle ne"></div>
+                                <div class="hsc-resize-handle sw"></div>
+                                <div class="hsc-resize-handle se"></div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                $layersContainer.html(layersHTML);
+
+                // Update overlay if needed
+                const $overlay = $('#hsc-preview-slide .hsc-preview-overlay');
+                if (slide.bg_overlay && $overlay.length > 0) {
+                    let overlayStyle = '';
+                    if (slide.bg_overlay_type === 'gradient') {
+                        overlayStyle = `linear-gradient(${slide.bg_overlay_gradient_direction}, ${slide.bg_overlay_gradient_start}, ${slide.bg_overlay_gradient_end})`;
+                        $overlay.css('background', overlayStyle);
+                    } else {
+                        $overlay.css('background-color', slide.bg_overlay_color);
+                    }
+                    $overlay.css('opacity', slide.bg_overlay_opacity || 0.5);
+                }
+
+                // Re-init drag & resize
                 hscInitDragResize();
             }
             
             function hscGetPreviewLayerStyles(layer) {
                 let styles = `
-                    left: ${layer.pos_x || 0}px;
-                    top: ${layer.pos_y || 0}px;
-                    z-index: ${layer.z_index || 10};
+                    left: ${layer.pos_x || 0}px !important;
+                    top: ${layer.pos_y || 0}px !important;
+                    z-index: ${layer.z_index || 10} !important;
                 `;
-                
+
                 if (layer.width !== 'auto' && layer.width) {
-                    styles += `width: ${layer.width}px;`;
+                    styles += `width: ${layer.width}px !important;`;
                 }
                 if (layer.height !== 'auto' && layer.height) {
-                    styles += `height: ${layer.height}px;`;
+                    styles += `height: ${layer.height}px !important;`;
                 }
-                
+
                 if (layer.type === 'text' || layer.type === 'button') {
                     styles += `
-                        font-size: ${layer.font_size || 16}px;
-                        color: ${layer.color || '#fff'};
-                        font-weight: ${layer.font_weight || 400};
-                        text-align: ${layer.text_align || 'left'};
+                        font-size: ${layer.font_size || 16}px !important;
+                        color: ${layer.color || '#fff'} !important;
+                        font-weight: ${layer.font_weight || 400} !important;
+                        text-align: ${layer.text_align || 'left'} !important;
+                        line-height: ${layer.line_height || 1.5} !important;
+                        letter-spacing: ${layer.letter_spacing || 0}px !important;
                     `;
+
+                    // Text shadow/glow effect
+                    if (layer.text_glow && layer.text_glow_color) {
+                        styles += `text-shadow: 0 0 ${layer.text_glow_blur || 20}px ${layer.text_glow_color} !important;`;
+                    }
                 }
-                
+
                 if (layer.type === 'button') {
                     styles += `
-                        background-color: ${layer.bg_color || '#8B5CF6'};
-                        padding: ${layer.padding || '12px 24px'};
-                        border-radius: ${layer.border_radius || 6}px;
-                        display: inline-block;
-                        text-decoration: none;
+                        background-color: ${layer.bg_color || '#8B5CF6'} !important;
+                        padding: ${layer.padding || '12px 24px'} !important;
+                        border-radius: ${layer.border_radius || 6}px !important;
+                        display: inline-block !important;
+                        text-decoration: none !important;
+                        cursor: pointer !important;
                     `;
                 }
-                
+
+                // Image specific styles
+                if (layer.type === 'image') {
+                    if (layer.border_radius) {
+                        styles += `border-radius: ${layer.border_radius}px !important; overflow: hidden !important;`;
+                    }
+                    if (layer.opacity !== undefined && layer.opacity !== 1) {
+                        styles += `opacity: ${layer.opacity} !important;`;
+                    }
+                }
+
+                // Motion animation classes
+                if (layer.motion_animation && layer.motion_animation !== 'none') {
+                    styles += `animation: hsc-motion-${layer.motion_animation} ${layer.motion_duration || 3}s ${layer.motion_timing || 'ease-in-out'} infinite !important;`;
+                }
+
                 return styles;
             }
-            
+
             function hscGetPreviewLayerContent(layer) {
                 if (layer.type === 'text') {
-                    return `<div>${layer.content || 'Metin'}</div>`;
+                    const textStyles = `
+                        font-size: ${layer.font_size || 16}px !important;
+                        color: ${layer.color || '#fff'} !important;
+                        font-weight: ${layer.font_weight || 400} !important;
+                        text-align: ${layer.text_align || 'left'} !important;
+                        line-height: ${layer.line_height || 1.5} !important;
+                        letter-spacing: ${layer.letter_spacing || 0}px !important;
+                        ${layer.text_glow && layer.text_glow_color ? `text-shadow: 0 0 ${layer.text_glow_blur || 20}px ${layer.text_glow_color} !important;` : ''}
+                    `;
+                    return `<div style="${textStyles}">${layer.content || 'Metin'}</div>`;
                 } else if (layer.type === 'image') {
-                    return `<img src="${layer.image_url || ''}" style="max-width: 100%; display: block; pointer-events: none;" alt="">`;
+                    const imgStyles = `
+                        max-width: 100% !important;
+                        display: block !important;
+                        pointer-events: none !important;
+                        ${layer.border_radius ? `border-radius: ${layer.border_radius}px !important;` : ''}
+                        ${layer.opacity !== undefined && layer.opacity !== 1 ? `opacity: ${layer.opacity} !important;` : ''}
+                    `;
+                    const hoverClass = layer.hover_effect ? `hsc-hover-${layer.hover_effect}` : '';
+                    return `<img src="${layer.image_url || ''}" class="${hoverClass}" style="${imgStyles}" alt="${layer.alt_text || ''}">`;
                 } else if (layer.type === 'button') {
-                    return `<span>${layer.content || 'Buton'}</span>`;
+                    const btnStyles = `
+                        font-size: ${layer.font_size || 16}px !important;
+                        color: ${layer.color || '#fff'} !important;
+                        font-weight: ${layer.font_weight || 700} !important;
+                    `;
+                    return `<span style="${btnStyles}">${layer.content || 'Buton'}</span>`;
                 }
                 return '';
             }
@@ -2559,6 +2824,41 @@ class ClassHeroSliderComponent extends KreatusComponentBase {
                 $form.find('.current-settings').html(`<small style="color: #10B981; font-weight: 600;">✓ ${slideCount} slayt tanımlandı</small>`);
             };
             
+            // PARTICLE EFFECTS
+            function hscInitParticles(effect) {
+                const $container = $('#hsc-preview-slide .hsc-particles');
+                if ($container.length === 0 || effect === 'none') return;
+
+                $container.empty();
+
+                if (effect === 'snow') {
+                    for (let i = 0; i < 50; i++) {
+                        const $particle = $('<div class="hsc-particle hsc-snow"></div>');
+                        $particle.css({
+                            left: Math.random() * 100 + '%',
+                            animationDuration: (Math.random() * 7 + 8) + 's',
+                            animationDelay: Math.random() * 10 + 's',
+                            width: (Math.random() * 4 + 2) + 'px',
+                            height: (Math.random() * 4 + 2) + 'px',
+                            opacity: Math.random() * 0.5 + 0.3
+                        });
+                        $container.append($particle);
+                    }
+                } else if (effect === 'bubbles') {
+                    for (let i = 0; i < 20; i++) {
+                        const $particle = $('<div class="hsc-particle hsc-bubble"></div>');
+                        $particle.css({
+                            left: Math.random() * 100 + '%',
+                            animationDuration: (Math.random() * 10 + 10) + 's',
+                            animationDelay: Math.random() * 15 + 's',
+                            width: (Math.random() * 20 + 5) + 'px',
+                            height: (Math.random() * 20 + 5) + 'px'
+                        });
+                        $container.append($particle);
+                    }
+                }
+            }
+
             // UTILITIES
             function hscEscape(str) {
                 if (typeof str !== 'string') return '';
